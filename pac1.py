@@ -121,7 +121,7 @@ def spawn_ghost():
                 sGhost.color("lightblue")
                 sGhost.penup()
                 sGhost.goto(screen_x, screen_y)
-                sGhost.shapesize(1, 1, 0.5)
+                sGhost.shape("circle")
                 ghost_list.append(sGhost)
             if row[x_index] == 'p':
                 screen_x = start_x + (x_index * 20)
@@ -130,7 +130,7 @@ def spawn_ghost():
                 pGhost.color("pink")
                 pGhost.penup()
                 pGhost.goto(screen_x, screen_y)
-                pGhost.shapesize(1, 1, 0.5)
+                pGhost.shape("circle")
                 ghost_list.append(pGhost)
             if row[x_index] == 'o':
                 screen_x = start_x + (x_index * 20)
@@ -139,7 +139,7 @@ def spawn_ghost():
                 oGhost.color("orange")
                 oGhost.penup()
                 oGhost.goto(screen_x, screen_y)
-                oGhost.shapesize(1, 1, 0.5)
+                oGhost.shape("circle")
                 ghost_list.append(oGhost)
             if row[x_index] == 'r':
                 screen_x = start_x + (x_index * 20)
@@ -148,9 +148,42 @@ def spawn_ghost():
                 rGhost.color("red")
                 rGhost.penup()
                 rGhost.goto(screen_x, screen_y)
-                rGhost.shapesize(1, 1, 0.5)
+                rGhost.shape("circle")
                 ghost_list.append(rGhost)
     return ghost_list
+
+def move_ghosts():
+    directions = ["up", "down", "left", "right"]
+
+    for ghost in ghost_list:
+        current_x, current_y = ghost.xcor(), ghost.ycor()
+
+        possible_moves = []
+
+        for direction in directions:
+            new_x, new_y = current_x, current_y
+            if direction == "up":
+                new_y += 20
+            elif direction == "down":
+                new_y -= 20
+            elif direction == "left":
+                new_x -= 20
+            elif direction == "right":
+                new_x += 20
+
+            if not will_collide(new_x, new_y):
+                possible_moves.append((new_x, new_y))
+
+        # Move to a random valid position
+        if possible_moves:
+            next_move = random.choice(possible_moves)
+            ghost.goto(next_move)
+
+        # Teleport ghosts across the border
+        if ghost.xcor() > 190:
+            ghost.goto(-190, ghost.ycor())
+        if ghost.xcor() < -190:
+            ghost.goto(190, ghost.ycor())
 
 # Pacman set  up
 pacman = turtle.Turtle()
@@ -209,6 +242,12 @@ screen.onkeypress(move_down, "Down")
 screen.onkeypress(move_left, "Left")
 screen.onkeypress(move_right, "Right")
 
+def game_over(message):
+    pacman.hideturtle()
+    for ghost in ghost_list:
+        ghost.hideturtle()
+    score_display.goto(0, 0)
+    score_display.write(message, align="center", font=("Arial", 24, "bold"))
 
 # Main game loop
 def game_loop():
@@ -252,6 +291,19 @@ def game_loop():
             score += 50
             score_display.clear()
             score_display.write(f"Score: {score}", align="left", font=("Arial", 16, "normal"))
+
+    for ghost in ghost_list:
+        if pacman.distance(ghost) < 25:
+            game_over("Game Over! Pac-Man got caught!")
+            return
+        
+    if not food_list:
+        game_over("You Win! All pellets eaten!")
+        return
+    
+    
+
+    move_ghosts()
 
     screen.update()
     turtle.ontimer(game_loop, 100)
